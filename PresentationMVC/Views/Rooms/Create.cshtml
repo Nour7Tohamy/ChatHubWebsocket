@@ -1,0 +1,210 @@
+@model PresentationMVC.ViewModel.CreateRoomViewModel
+@{
+    ViewBag.Title = "Create Room";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .form-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-subtitle {
+            color: var(--text-2);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                color: var(--text-1);
+                font-size: 0.95rem;
+            }
+
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 0.75rem;
+                background: var(--bg-1);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--text-1);
+                font-family: var(--font);
+                font-size: 0.95rem;
+                transition: all 0.2s ease;
+            }
+
+                .form-group input:focus,
+                .form-group textarea:focus {
+                    outline: none;
+                    border-color: var(--accent);
+                    box-shadow: 0 0 0 3px var(--accent-dim);
+                }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 100px;
+                font-family: var(--font);
+            }
+
+        .validation-error {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-errors {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--red);
+            font-size: 0.9rem;
+        }
+
+            .form-errors ul {
+                list-style: none;
+                margin: 0;
+            }
+
+            .form-errors li {
+                padding: 0.25rem 0;
+            }
+
+        .form-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-submit {
+            background: var(--accent);
+            color: white;
+        }
+
+            .btn-submit:hover {
+                background: var(--accent-2);
+                transform: translateY(-2px);
+            }
+
+        .btn-cancel {
+            background: var(--bg-1);
+            color: var(--text-1);
+            border: 1px solid var(--border);
+        }
+
+            .btn-cancel:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+        /* ══ RESPONSIVE ══════════════════════════════ */
+        @@media (max-width: 768px) {
+            .form-container {
+                padding: 0 0.5rem;
+            }
+
+            .form-card {
+                padding: 1.5rem;
+            }
+
+            .form-title {
+                font-size: 1.5rem;
+            }
+
+            .form-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .form-card {
+                padding: 1.25rem;
+                border-radius: 10px;
+            }
+
+            .form-title {
+                font-size: 1.3rem;
+            }
+
+            .form-group input, .form-group textarea {
+                font-size: 1rem;
+            }
+            /* prevent iOS zoom */
+        }
+    </style>
+}
+
+<div class="form-container">
+    <div class="form-card">
+        <h1 class="form-title">Create a New Room</h1>
+        <p class="form-subtitle">Set up a space for your team to chat and collaborate</p>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="form-errors">
+                @ViewBag.ErrorMessage
+            </div>
+        }
+
+        <form method="post" asp-controller="Rooms" asp-action="Create" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="Name">Room Name *</label>
+                <input type="text" asp-for="Name" placeholder="e.g., general, announcements, random" />
+                <span asp-validation-for="Name" class="validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description">Description</label>
+                <textarea asp-for="Description" placeholder="What's this room about? (optional)"></textarea>
+                <span asp-validation-for="Description" class="validation-error"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-submit">Create Room</button>
+                <a href="/Rooms/Index" class="btn btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

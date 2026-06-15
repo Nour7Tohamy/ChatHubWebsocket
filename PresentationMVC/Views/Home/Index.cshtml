@@ -1,0 +1,1315 @@
+﻿@{
+    ViewBag.Title = "ChatHub";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+        :root {
+            --hero-bg: #06060a;
+            --card-bg: rgba(255,255,255,0.03);
+            --card-border: rgba(255,255,255,0.07);
+            --card-hover: rgba(255,255,255,0.06);
+            --pill-bg: rgba(124,106,255,0.12);
+            --pill-border: rgba(124,106,255,0.3);
+            --glow-purple: rgba(124,106,255,0.15);
+            --glow-blue: rgba(56,182,255,0.08);
+            --text-dim: rgba(255,255,255,0.45);
+            --text-mid: rgba(255,255,255,0.72);
+            --syne: 'Space Grotesk', sans-serif;
+            --dm: 'DM Sans', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--dm);
+            background: var(--hero-bg) !important;
+        }
+
+        /* ── CANVAS PARTICLES ── */
+        #particle-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .landing {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+            /* ── NOISE OVERLAY ── */
+            .landing::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+                opacity: 0.025;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+        /* ── GLOW ORBS ── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .orb-1 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(124,106,255,0.18) 0%, transparent 70%);
+            top: -200px;
+            left: -100px;
+            animation: driftA 20s ease-in-out infinite alternate;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(56,182,255,0.12) 0%, transparent 70%);
+            top: 30%;
+            right: -80px;
+            animation: driftB 25s ease-in-out infinite alternate;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 70%);
+            bottom: 10%;
+            left: 20%;
+            animation: driftC 18s ease-in-out infinite alternate;
+        }
+
+        @@keyframes driftA {
+            to {
+                transform: translate(80px, 60px) scale(1.1);
+            }
+        }
+
+        @@keyframes driftB {
+            to {
+                transform: translate(-60px, 80px) scale(0.9);
+            }
+        }
+
+        @@keyframes driftC {
+            to {
+                transform: translate(50px, -40px) scale(1.15);
+            }
+        }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 1.5rem 4rem;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Live badge */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--accent-2);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fadeUp 0.6s 0.1s ease forwards;
+            cursor: default;
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+
+        @@keyframes pulse-dot {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.7);
+            }
+        }
+
+        /* Hero heading */
+        .hero-headline {
+            font-family: var(--syne);
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+        }
+
+            .hero-headline .grad {
+                background: linear-gradient(135deg, #a594ff 0%, #7c6aff 35%, #38b6ff 70%, #a594ff 100%);
+                background-size: 200% 200%;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: shimmer 5s ease-in-out infinite;
+            }
+
+        @@keyframes shimmer {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Hero subtext */
+        .hero-sub {
+            font-family: var(--dm);
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            font-weight: 300;
+            color: var(--text-mid);
+            max-width: 560px;
+            line-height: 1.65;
+            margin-bottom: 3rem;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fadeUp 0.7s 0.4s ease forwards;
+        }
+
+        /* CTA buttons */
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 5rem;
+            opacity: 0;
+            transform: translateY(14px);
+            animation: fadeUp 0.7s 0.55s ease forwards;
+        }
+
+        .btn-cta-primary {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 100px;
+            font-family: var(--dm);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            letter-spacing: 0.01em;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 40px rgba(124,106,255,0.35), 0 4px 20px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+            .btn-cta-primary::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+                border-radius: inherit;
+            }
+
+            .btn-cta-primary:hover {
+                transform: translateY(-3px) scale(1.02);
+                box-shadow: 0 0 60px rgba(124,106,255,0.5), 0 8px 30px rgba(0,0,0,0.5);
+            }
+
+        .btn-cta-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: transparent;
+            color: var(--text-mid);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 100px;
+            font-family: var(--dm);
+            font-size: 0.95rem;
+            font-weight: 400;
+            text-decoration: none;
+            transition: all 0.25s;
+            backdrop-filter: blur(10px);
+        }
+
+            .btn-cta-secondary:hover {
+                border-color: var(--accent);
+                color: var(--accent-2);
+                background: rgba(124,106,255,0.08);
+                transform: translateY(-2px);
+            }
+
+        /* Arrow icon animation */
+        .arrow-icon {
+            font-size: 1rem;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn-cta-primary:hover .arrow-icon {
+            transform: translateX(4px);
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+            backdrop-filter: blur(12px);
+            padding: 0;
+            overflow: hidden;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fadeUp 0.7s 0.7s ease forwards;
+        }
+
+        .stat-item {
+            padding: 1.2rem 2.5rem;
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+            .stat-item + .stat-item::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                bottom: 20%;
+                width: 1px;
+                background: var(--card-border);
+            }
+
+        .stat-num {
+            font-family: var(--syne);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            display: block;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        /* ── FEATURES SECTION ── */
+        .features {
+            padding: 6rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-eyebrow {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent-2);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: block;
+            text-align: center;
+        }
+
+        .section-title {
+            font-family: var(--syne);
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            text-align: center;
+            color: var(--text-mid);
+            font-size: 1rem;
+            font-weight: 300;
+            max-width: 500px;
+            margin: 0 auto 4rem;
+            line-height: 1.6;
+        }
+
+        /* Feature grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--card-border);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .feature-card {
+            background: rgba(10,10,14,0.8);
+            padding: 2.5rem 2rem;
+            transition: background 0.3s;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+            .feature-card::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse at 50% 0%, rgba(124,106,255,0.12) 0%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.4s;
+            }
+
+            .feature-card:hover {
+                background: rgba(18,16,28,0.95);
+            }
+
+                .feature-card:hover::after {
+                    opacity: 1;
+                }
+
+        .feature-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover .feature-icon-wrap {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(124,106,255,0.25);
+        }
+
+        .feature-card-title {
+            font-family: var(--syne);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.6rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card-desc {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            line-height: 1.65;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── CHAT PREVIEW ── */
+        .preview-section {
+            padding: 4rem 1.5rem 6rem;
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .chat-mockup {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        .mockup-bar {
+            padding: 1rem 1.5rem;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-r {
+            background: #ff5f57;
+        }
+
+        .dot-y {
+            background: #ffbd2e;
+        }
+
+        .dot-g {
+            background: #28ca41;
+        }
+
+        .mockup-title {
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-family: var(--dm);
+        }
+
+        .mockup-msgs {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 260px;
+        }
+
+        .mock-msg {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+            .mock-msg.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .mock-msg.own {
+                flex-direction: row-reverse;
+            }
+
+        .mock-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .mock-bubble {
+            padding: 0.65rem 1rem;
+            border-radius: 14px 14px 14px 4px;
+            font-size: 0.875rem;
+            line-height: 1.45;
+            max-width: 65%;
+        }
+
+        .mock-msg.own .mock-bubble {
+            background: var(--accent);
+            color: white;
+            border-radius: 14px 14px 4px 14px;
+        }
+
+        .mock-bubble.other {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-mid);
+            border: 1px solid var(--card-border);
+        }
+
+        .mock-avatar.a1 {
+            background: rgba(124,106,255,0.25);
+            color: var(--accent-2);
+        }
+
+        .mock-avatar.a2 {
+            background: rgba(56,182,255,0.2);
+            color: #38b6ff;
+        }
+
+        .mock-avatar.a3 {
+            background: rgba(34,197,94,0.2);
+            color: #22c55e;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+            .typing-indicator.show {
+                opacity: 1;
+            }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 0.65rem 1rem;
+            background: rgba(255,255,255,0.07);
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+        }
+
+            .typing-dots span {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                animation: typingBounce 1.2s ease-in-out infinite;
+            }
+
+                .typing-dots span:nth-child(2) {
+                    animation-delay: 0.2s;
+                }
+
+                .typing-dots span:nth-child(3) {
+                    animation-delay: 0.4s;
+                }
+
+        @@keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
+
+        .mockup-input {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            gap: 0.75rem;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .mockup-input-box {
+            flex: 1;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .mockup-send {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            box-shadow: 0 0 16px rgba(124,106,255,0.4);
+        }
+
+        /* ── BOTTOM CTA ── */
+        .cta-section {
+            padding: 5rem 1.5rem 7rem;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-card {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(124,106,255,0.06);
+            border: 1px solid rgba(124,106,255,0.2);
+            border-radius: 24px;
+            padding: 4rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .cta-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 300px;
+                height: 1px;
+                background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            }
+
+        .cta-title {
+            font-family: var(--syne);
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .cta-sub {
+            color: var(--text-mid);
+            font-weight: 300;
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* ── ANIMATIONS ── */
+        @@keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+            .reveal.in-view {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        .reveal-delay-1 {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2 {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3 {
+            transition-delay: 0.3s;
+        }
+
+        /* ── RESPONSIVE ── */
+        /* ══ RESPONSIVE ══════════════════════════════ */
+        @@media (max-width: 1024px) {
+            .hero-section {
+                padding: 5rem 1.5rem 4rem;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1px;
+            }
+        }
+
+        @@media (max-width: 900px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-row {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .stat-item + .stat-item::before {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-section {
+                padding: 3.5rem 1rem 3rem;
+            }
+
+            .hero-badge {
+                font-size: 0.7rem;
+                padding: 5px 12px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+                .hero-actions a, .hero-actions button {
+                    text-align: center;
+                    justify-content: center;
+                }
+
+            .features-section, .stats-section, .cta-section {
+                padding: 4rem 1rem;
+            }
+
+            .section-label {
+                font-size: 0.7rem;
+            }
+
+            .stats-row {
+                gap: 1rem;
+            }
+
+            .stat-item {
+                min-width: 130px;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .hero-section {
+                padding: 3rem 1rem 2.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-headline {
+                font-size: 2.4rem;
+            }
+
+            .stat-item {
+                padding: 1rem 1.25rem;
+            }
+
+            .cta-card {
+                padding: 2rem 1.25rem;
+            }
+
+            .features-section, .stats-section, .cta-section {
+                padding: 3rem 0.75rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .hero-headline {
+                font-size: 2rem;
+            }
+
+            .hero-sub {
+                font-size: 0.9rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem 1.25rem;
+            }
+        }
+    </style>
+}
+
+<canvas id="particle-canvas"></canvas>
+
+<div class="landing">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- ═══════════ HERO ═══════════ -->
+    <section class="hero">
+        <div class="live-badge">
+            <span class="live-dot"></span>
+            Real-time messaging — SignalR powered
+        </div>
+
+        <h1 class="hero-headline">
+            Where conversations<br><span class="grad">come alive</span>
+        </h1>
+
+        <p class="hero-sub">
+            ChatHub brings your team together with instant messaging, private chats, and collaborative rooms — all in one beautifully crafted space.
+        </p>
+
+        @if (User.Identity?.IsAuthenticated ?? false)
+        {
+            <div class="hero-cta">
+                <a href="/Rooms/Index" class="btn-cta-primary">
+                    Open Rooms <span class="arrow-icon">→</span>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="hero-cta">
+                <a href="/Auth/Register" class="btn-cta-primary">
+                    Get Started Free <span class="arrow-icon">→</span>
+                </a>
+                <a href="/Auth/Login" class="btn-cta-secondary">
+                    Sign In
+                </a>
+            </div>
+        }
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-num" id="c-users">0</span>
+                <span class="stat-label">Active Users</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num" id="c-msgs">0</span>
+                <span class="stat-label">Messages Sent</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num" id="c-rooms">0</span>
+                <span class="stat-label">Chat Rooms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num">99<span style="font-size:1.1rem">%</span></span>
+                <span class="stat-label">Uptime</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ CHAT PREVIEW ═══════════ -->
+    <section class="preview-section">
+        <div class="chat-mockup reveal">
+            <div class="mockup-bar">
+                <span class="dot dot-r"></span>
+                <span class="dot dot-y"></span>
+                <span class="dot dot-g"></span>
+                <span class="mockup-title"># general — 3 members</span>
+            </div>
+            <div class="mockup-msgs" id="mock-msgs">
+                <div class="mock-msg" id="mm1">
+                    <div class="mock-avatar a1">A</div>
+                    <div class="mock-bubble other">Hey team! Just pushed the new build 🚀</div>
+                </div>
+                <div class="mock-msg" id="mm2">
+                    <div class="mock-avatar a2">S</div>
+                    <div class="mock-bubble other">Awesome! Checking it out now</div>
+                </div>
+                <div class="mock-msg own" id="mm3">
+                    <div class="mock-avatar a3">Y</div>
+                    <div class="mock-bubble">Looks great! The new UI is 🔥</div>
+                </div>
+                <div class="mock-msg" id="mm4">
+                    <div class="mock-avatar a1">A</div>
+                    <div class="mock-bubble other">Thanks! Let's ship it today 💪</div>
+                </div>
+                <div class="typing-indicator" id="typing-indicator">
+                    <div class="mock-avatar a2">S</div>
+                    <div class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="mockup-input">
+                <div class="mockup-input-box">Type a message...</div>
+                <div class="mockup-send">➤</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ FEATURES ═══════════ -->
+    <section class="features">
+        <span class="section-eyebrow reveal">Everything you need</span>
+        <h2 class="section-title reveal reveal-delay-1">Built for real conversations</h2>
+        <p class="section-desc reveal reveal-delay-2">
+            Powerful features designed to make every interaction smooth, fast, and delightful.
+        </p>
+
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon-wrap">⚡</div>
+                <div class="feature-card-title">Real-Time Messaging</div>
+                <div class="feature-card-desc">Instant delivery powered by ASP.NET SignalR. Messages appear the moment they're sent — no refresh needed.</div>
+            </div>
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon-wrap">🔐</div>
+                <div class="feature-card-title">Private Chats</div>
+                <div class="feature-card-desc">Send encrypted direct messages to any user. Your private conversations stay between you and them.</div>
+            </div>
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon-wrap">🏠</div>
+                <div class="feature-card-title">Chat Rooms</div>
+                <div class="feature-card-desc">Create topic-based rooms for your team. Join, leave, and manage your channels with ease.</div>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon-wrap">👤</div>
+                <div class="feature-card-title">Online Presence</div>
+                <div class="feature-card-desc">See who's online in real-time. Live status indicators keep you connected with your team.</div>
+            </div>
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon-wrap">🔔</div>
+                <div class="feature-card-title">Notifications</div>
+                <div class="feature-card-desc">Never miss a message. Smart notifications alert you to new activity without overwhelming you.</div>
+            </div>
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon-wrap">🛡️</div>
+                <div class="feature-card-title">JWT Auth</div>
+                <div class="feature-card-desc">Secure authentication with JSON Web Tokens. Your sessions stay valid and your data stays safe.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ BOTTOM CTA ═══════════ -->
+    <section class="cta-section">
+        <div class="cta-card reveal">
+            <h2 class="cta-title">Ready to start chatting?</h2>
+            <p class="cta-sub">Join thousands of teams already using ChatHub to collaborate, share ideas, and build something great together.</p>
+
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                    <a href="/Rooms/Index" class="btn-cta-primary">Browse Rooms <span class="arrow-icon">→</span></a>
+                    <a href="/Users/Index" class="btn-cta-secondary">Find Users</a>
+                </div>
+            }
+            else
+            {
+                <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                    <a href="/Auth/Register" class="btn-cta-primary">Create Free Account <span class="arrow-icon">→</span></a>
+                    <a href="/Auth/Login" class="btn-cta-secondary">I have an account</a>
+                </div>
+            }
+        </div>
+    </section>
+
+</div>
+@section Scripts {
+    <script>
+        /* ── PARTICLE CANVAS ── */
+        (function () {
+
+            const canvas = document.getElementById('particle-canvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            let W, H;
+            let particles = [];
+            let mouse = { x: -9999, y: -9999 };
+
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+            }
+
+            resize();
+            window.addEventListener('resize', resize);
+
+            window.addEventListener('mousemove', e => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            function createParticles(count) {
+
+                particles = [];
+
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * W,
+                        y: Math.random() * H,
+                        r: Math.random() * 1.5 + 0.3,
+                        dx: (Math.random() - 0.5) * 0.3,
+                        dy: (Math.random() - 0.5) * 0.3,
+                        opacity: Math.random() * 0.5 + 0.1
+                    });
+                }
+            }
+
+            createParticles(80);
+
+            function draw() {
+
+                ctx.clearRect(0, 0, W, H);
+
+                particles.forEach(p => {
+
+                    const dist = Math.hypot(
+                        p.x - mouse.x,
+                        p.y - mouse.y
+                    );
+
+                    const factor = Math.max(0, 1 - dist / 180);
+
+                    p.x += p.dx + (p.x - mouse.x) * factor * 0.004;
+                    p.y += p.dy + (p.y - mouse.y) * factor * 0.004;
+
+                    if (p.x < 0) p.x = W;
+                    if (p.x > W) p.x = 0;
+
+                    if (p.y < 0) p.y = H;
+                    if (p.y > H) p.y = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(
+                        p.x,
+                        p.y,
+                        p.r + factor * 2,
+                        0,
+                        Math.PI * 2
+                    );
+
+                    ctx.fillStyle =
+                        `rgba(165,148,255,${p.opacity + factor * 0.3})`;
+
+                    ctx.fill();
+                });
+
+                particles.forEach((a, i) => {
+
+                    for (let j = i + 1; j < particles.length; j++) {
+
+                        const b = particles[j];
+
+                        const d = Math.hypot(
+                            a.x - b.x,
+                            a.y - b.y
+                        );
+
+                        if (d < 100) {
+
+                            ctx.beginPath();
+                            ctx.moveTo(a.x, a.y);
+                            ctx.lineTo(b.x, b.y);
+
+                            ctx.strokeStyle =
+                                `rgba(124,106,255,${0.12 * (1 - d / 100)})`;
+
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                requestAnimationFrame(draw);
+            }
+
+            draw();
+
+        })();
+
+        /* ── COUNTERS ── */
+
+        function animateCounter(
+            el,
+            target,
+            suffix = '',
+            duration = 1800
+        ) {
+
+            let start = null;
+
+            const step = (timestamp) => {
+
+                if (!start) start = timestamp;
+
+                const progress =
+                    Math.min((timestamp - start) / duration, 1);
+
+                const eased =
+                    1 - Math.pow(1 - progress, 3);
+
+                const value =
+                    Math.floor(eased * target);
+
+                el.textContent =
+                    value >= 1000
+                        ? (value / 1000).toFixed(1) + 'k' + suffix
+                        : value + suffix;
+
+                if (progress < 1)
+                    requestAnimationFrame(step);
+            };
+
+            requestAnimationFrame(step);
+        }
+
+        const counterSection =
+            document.querySelector('.stats-row');
+
+        if (counterSection) {
+
+            const counterObs =
+                new IntersectionObserver(entries => {
+
+                    entries.forEach(entry => {
+
+                        if (entry.isIntersecting) {
+
+                            animateCounter(
+                                document.getElementById('c-users'),
+                                1240
+                            );
+
+                            animateCounter(
+                                document.getElementById('c-msgs'),
+                                84600
+                            );
+
+                            animateCounter(
+                                document.getElementById('c-rooms'),
+                                320
+                            );
+
+                            counterObs.disconnect();
+                        }
+                    });
+
+                }, { threshold: 0.4 });
+
+            counterObs.observe(counterSection);
+        }
+
+        /* ── SCROLL REVEAL ── */
+
+        const revealObs =
+            new IntersectionObserver(entries => {
+
+                entries.forEach(entry => {
+
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    }
+                });
+
+            }, { threshold: 0.1 });
+
+        document
+            .querySelectorAll('.reveal')
+            .forEach(el => revealObs.observe(el));
+
+        /* ── CHAT MOCKUP ── */
+
+        function runChatAnim() {
+
+            const msgs = ['mm1', 'mm2', 'mm3', 'mm4'];
+
+            const typing =
+                document.getElementById('typing-indicator');
+
+            let delay = 400;
+
+            msgs.forEach(id => {
+
+                setTimeout(() => {
+
+                    const el =
+                        document.getElementById(id);
+
+                    if (el)
+                        el.classList.add('visible');
+
+                }, delay);
+
+                delay += 600;
+            });
+
+            setTimeout(() => {
+                typing?.classList.add('show');
+            }, delay);
+
+            setTimeout(() => {
+                typing?.classList.remove('show');
+            }, delay + 1800);
+        }
+
+        let chatStarted = false;
+
+        const chatMockup =
+            document.querySelector('.chat-mockup');
+
+        if (chatMockup) {
+
+            const mockObs =
+                new IntersectionObserver(entries => {
+
+                    entries.forEach(entry => {
+
+                        if (
+                            entry.isIntersecting &&
+                            !chatStarted
+                        ) {
+
+                            chatStarted = true;
+
+                            runChatAnim();
+
+                            setInterval(() => {
+
+                                document
+                                    .querySelectorAll('.mock-msg')
+                                    .forEach(msg =>
+                                        msg.classList.remove('visible')
+                                    );
+
+                                document
+                                    .getElementById('typing-indicator')
+                                    ?.classList.remove('show');
+
+                                runChatAnim();
+
+                            }, 7000);
+
+                            mockObs.disconnect();
+                        }
+                    });
+
+                }, { threshold: 0.3 });
+
+            mockObs.observe(chatMockup);
+        }
+    </script>
+}

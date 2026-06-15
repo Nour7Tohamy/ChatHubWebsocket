@@ -1,0 +1,81 @@
+﻿@{
+    ViewBag.Title = "Dashboard";
+    ViewBag.ActivePage = "Dashboard";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+
+    var recentUsers = ViewBag.RecentUsers as IEnumerable<Domain.Entities.Main.AppUser>
+                      ?? Enumerable.Empty<Domain.Entities.Main.AppUser>();
+}
+
+<!-- Stat Cards -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">@ViewBag.TotalUsers</div>
+        <div class="stat-sub">registered accounts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Online Now</div>
+        <div class="stat-value" style="color:var(--green)">@ViewBag.OnlineUsers</div>
+        <div class="stat-sub">active sessions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Rooms</div>
+        <div class="stat-value">@ViewBag.TotalRooms</div>
+        <div class="stat-sub">public &amp; private</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Messages</div>
+        <div class="stat-value">@ViewBag.TotalMessages</div>
+        <div class="stat-sub">total sent</div>
+    </div>
+</div>
+
+<!-- Recent Users -->
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">Recently Joined</span>
+        <a href="/Admin/Users" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Joined</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in recentUsers)
+            {
+                var initials = string.Join("",
+                    (u.DisplayName ?? u.UserName ?? "?")
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(w => char.ToUpper(w[0]))
+                        .Take(2));
+
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5b4ed4);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;flex-shrink:0;font-family:var(--font-display)">@initials</div>
+                            <span>@(u.DisplayName ?? u.UserName)</span>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-2)">@u.Email</td>
+                    <td style="color:var(--text-3);font-family:var(--font-mono);font-size:0.78rem">@u.CreatedAt.ToString("MMM d, yyyy")</td>
+                    <td>
+                        @if (u.IsOnline)
+                        {
+                            <span class="badge badge-online">● Online</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-offline">Offline</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

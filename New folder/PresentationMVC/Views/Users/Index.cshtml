@@ -1,0 +1,670 @@
+@using PresentationMVC.ViewModel
+@model IEnumerable<PresentationMVC.ViewModel.UserViewModel>
+
+@{
+    ViewBag.Title = "People";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        :root {
+            --syne: 'Syne', sans-serif;
+            --dm: 'DM Sans', sans-serif;
+        }
+
+        body {
+            font-family: var(--dm) !important;
+        }
+
+        /* ── ORBS ── */
+        .users-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(110px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .users-orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56,182,255,0.09) 0%, transparent 70%);
+            top: -80px;
+            right: -80px;
+            animation: uOrb1 20s ease-in-out infinite alternate;
+        }
+
+        .users-orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(124,106,255,0.1) 0%, transparent 70%);
+            bottom: 10%;
+            left: -100px;
+            animation: uOrb2 25s ease-in-out infinite alternate;
+        }
+        @@keyframes uOrb1 {
+            to {
+                transform: translate(-50px, 60px);
+            }
+        }
+        @@keyframes uOrb2 {
+            to {
+                transform: translate(60px, -40px);
+            }
+        }
+
+        /* ── PAGE ── */
+        .users-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 0 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ── */
+        .page-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .page-eyebrow {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-2);
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            display: block;
+            opacity: 0;
+            animation: fadeUp 0.5s 0.05s ease forwards;
+        }
+
+        .page-title {
+            font-family: var(--syne) !important;
+            font-size: 2.2rem !important;
+            font-weight: 700 !important;
+            color: #fff !important;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin: 0 !important;
+            opacity: 0;
+            animation: fadeUp 0.5s 0.12s ease forwards;
+        }
+
+        /* ── TOOLBAR ── */
+        .users-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeUp 0.5s 0.2s ease forwards;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        #user-search {
+            width: 100%;
+            padding: 0.7rem 1rem 0.7rem 2.5rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            color: #fff;
+            font-family: var(--dm);
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            #user-search::placeholder {
+                color: rgba(255,255,255,0.25);
+            }
+
+            #user-search:focus {
+                outline: none;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px rgba(124,106,255,0.15);
+            }
+
+        /* filter pills */
+        .filter-pills {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .filter-pill {
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: rgba(255,255,255,0.45);
+            font-family: var(--dm);
+            transition: all 0.15s;
+        }
+
+            .filter-pill:hover {
+                border-color: rgba(255,255,255,0.2);
+                color: rgba(255,255,255,0.7);
+            }
+
+            .filter-pill.active {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+                box-shadow: 0 0 14px rgba(124,106,255,0.3);
+            }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.3);
+            font-weight: 600;
+            margin-bottom: 0.85rem;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+            .section-label:first-of-type {
+                margin-top: 0;
+            }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: rgba(255,255,255,0.06);
+            }
+
+            .section-label .s-count {
+                background: rgba(255,255,255,0.06);
+                border-radius: 100px;
+                padding: 1px 8px;
+                font-size: 0.7rem;
+            }
+
+        .online-dot-label {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+            display: inline-block;
+        }
+
+        /* ── GRID ── */
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 1px;
+        }
+
+        /* ── USER CARD ── */
+        .user-card {
+            background: rgba(10,10,14,0.85);
+            padding: 1.5rem;
+            transition: background 0.25s;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: cardIn 0.4s ease forwards;
+        }
+
+            .user-card::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse at 50% -10%, rgba(124,106,255,0.08) 0%, transparent 65%);
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .user-card:hover {
+                background: rgba(16,14,24,0.95);
+            }
+
+                .user-card:hover::after {
+                    opacity: 1;
+                }
+
+        @@keyframes cardIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .user-card:nth-child(2) {
+            animation-delay: 0.09s;
+        }
+
+        .user-card:nth-child(3) {
+            animation-delay: 0.13s;
+        }
+
+        .user-card:nth-child(4) {
+            animation-delay: 0.17s;
+        }
+
+        .user-card:nth-child(5) {
+            animation-delay: 0.21s;
+        }
+
+        .user-card:nth-child(6) {
+            animation-delay: 0.25s;
+        }
+
+        .user-card:nth-child(n+7) {
+            animation-delay: 0.28s;
+        }
+
+        /* card content */
+        .user-card-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* avatar */
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--syne);
+            font-size: 0.9rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            position: relative;
+            transition: transform 0.25s;
+        }
+
+        .user-card:hover .user-avatar {
+            transform: scale(1.06);
+        }
+
+        .user-avatar.online {
+            background: rgba(34,197,94,0.15);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: #4ade80;
+        }
+
+        .user-avatar.offline {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.45);
+        }
+        /* status dot on avatar */
+        .avatar-status {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #09090b;
+        }
+
+            .avatar-status.online {
+                background: #22c55e;
+                box-shadow: 0 0 6px #22c55e;
+            }
+
+            .avatar-status.offline {
+                background: rgba(255,255,255,0.2);
+            }
+
+        /* info */
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-family: var(--syne) !important;
+            font-size: 0.92rem !important;
+            font-weight: 600 !important;
+            color: #fff !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.77rem !important;
+            color: rgba(255,255,255,0.3) !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        /* status text */
+        .user-status-text {
+            font-size: 0.72rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .user-status-text.online {
+                color: #4ade80;
+            }
+
+            .user-status-text.offline {
+                color: rgba(255,255,255,0.2);
+            }
+
+        /* chat btn */
+        .btn-chat {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: rgba(124,106,255,0.12);
+            border: 1px solid rgba(124,106,255,0.2);
+            color: var(--accent-2);
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+            .btn-chat:hover {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+                transform: scale(1.08);
+                box-shadow: 0 0 14px rgba(124,106,255,0.35);
+            }
+
+        /* ── EMPTY ── */
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.015);
+            animation: fadeUp 0.5s 0.15s ease both;
+        }
+
+        .empty-ring {
+            width: 68px;
+            height: 68px;
+            border-radius: 20px;
+            background: rgba(124,106,255,0.1);
+            border: 1px solid rgba(124,106,255,0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .empty-title {
+            font-family: var(--syne) !important;
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
+            color: #fff !important;
+            margin-bottom: 0.4rem;
+        }
+
+        .empty-sub {
+            color: rgba(255,255,255,0.3);
+            font-size: 0.875rem;
+        }
+
+        /* ── NO RESULTS ── */
+        #no-results-msg {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255,255,255,0.25);
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            display: none;
+        }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media(max - width: 640px)
+
+        {
+            .users-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 1.7rem !important;
+            }
+        }
+    </style>
+}
+
+@functions {
+    public string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        return string.Join("", name
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => char.ToUpper(x[0]))
+            .Take(2));
+    }
+}
+
+<div class="users-orb users-orb-1"></div>
+<div class="users-orb users-orb-2"></div>
+
+<div class="users-page">
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <span class="page-eyebrow">ChatHub</span>
+        <h1 class="page-title">People</h1>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        var onlineUsers = Model.Where(x => x.IsOnline).ToList();
+        var offlineUsers = Model.Where(x => !x.IsOnline).ToList();
+
+        <!-- TOOLBAR -->
+        <div class="users-toolbar">
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="user-search" placeholder="Search people..." autocomplete="off" />
+            </div>
+            <div class="filter-pills">
+                <button class="filter-pill active" data-filter="all">All <span style="opacity:.45">@Model.Count()</span></button>
+                <button class="filter-pill" data-filter="online">Online <span style="opacity:.45">@onlineUsers.Count</span></button>
+                <button class="filter-pill" data-filter="offline">Offline <span style="opacity:.45">@offlineUsers.Count</span></button>
+            </div>
+        </div>
+
+        <div id="no-results-msg">No people match your search.</div>
+
+        <!-- ONLINE -->
+        @if (onlineUsers.Any())
+        {
+            <div class="section-label" data-section="online">
+                <span class="online-dot-label"></span>
+                Online
+                <span class="s-count">@onlineUsers.Count</span>
+            </div>
+            <div class="users-grid" id="online-grid">
+                @foreach (var user in onlineUsers)
+                {
+                    <div class="user-card"
+                         data-name="@user.DisplayName.ToLower()"
+                         data-email="@user.Email.ToLower()"
+                         data-status="online">
+                        <div class="user-card-inner">
+                            <div class="user-avatar online">
+                                @GetInitials(user.DisplayName)
+                                <span class="avatar-status online"></span>
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">@user.DisplayName</div>
+                                <div class="user-email">@user.Email</div>
+                                <div class="user-status-text online">● Active now</div>
+                            </div>
+                            <a href="/Messages/Private?receiverId=@user.Id&receiverName=@Uri.EscapeDataString(user.DisplayName)"
+                               class="btn-chat" title="Start chat">💬</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- OFFLINE -->
+        @if (offlineUsers.Any())
+        {
+            <div class="section-label" id="offline-label" data-section="offline">
+                Offline
+                <span class="s-count">@offlineUsers.Count</span>
+            </div>
+            <div class="users-grid" id="offline-grid">
+                @foreach (var user in offlineUsers)
+                {
+                    <div class="user-card"
+                         data-name="@user.DisplayName.ToLower()"
+                         data-email="@user.Email.ToLower()"
+                         data-status="offline">
+                        <div class="user-card-inner">
+                            <div class="user-avatar offline">
+                                @GetInitials(user.DisplayName)
+                                <span class="avatar-status offline"></span>
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">@user.DisplayName</div>
+                                <div class="user-email">@user.Email</div>
+                                <div class="user-status-text offline">○ Offline</div>
+                            </div>
+                            <a href="/Messages/Private?receiverId=@user.Id&receiverName=@Uri.EscapeDataString(user.DisplayName)"
+                               class="btn-chat" title="Start chat">💬</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-ring">👥</div>
+            <div class="empty-title">No users found</div>
+            <p class="empty-sub">Invite people to join ChatHub and start conversations.</p>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script>
+        const searchInput  = document.getElementById('user-search');
+        const filterPills  = document.querySelectorAll('.filter-pill');
+        const noResultsMsg = document.getElementById('no-results-msg');
+        let currentFilter  = 'all';
+
+        function applyFilter() {
+            const query = searchInput?.value.toLowerCase().trim() ?? '';
+            const cards = document.querySelectorAll('.user-card');
+            const sections = { online: 0, offline: 0 };
+            let totalVisible = 0;
+
+            cards.forEach(card => {
+                const name   = card.dataset.name ?? '';
+                const email  = card.dataset.email ?? '';
+                const status = card.dataset.status ?? '';
+
+                const matchSearch = name.includes(query) || email.includes(query);
+                const matchFilter =
+                    currentFilter === 'all' ||
+                    (currentFilter === 'online'  && status === 'online') ||
+                    (currentFilter === 'offline' && status === 'offline');
+
+                const show = matchSearch && matchFilter;
+                card.style.display = show ? '' : 'none';
+                if (show) {
+                    sections[status] = (sections[status] ?? 0) + 1;
+                    totalVisible++;
+                }
+            });
+
+            // show/hide section labels
+            ['online','offline'].forEach(s => {
+                const label = document.querySelector(`.section-label[data-section="${s}"]`);
+                const grid  = document.getElementById(`${s}-grid`);
+                if (label) label.style.display = sections[s] > 0 ? '' : 'none';
+                if (grid)  grid.style.display  = sections[s] > 0 ? '' : 'none';
+            });
+
+            if (noResultsMsg) {
+                noResultsMsg.style.display = totalVisible === 0 ? 'block' : 'none';
+            }
+        }
+
+        searchInput?.addEventListener('input', applyFilter);
+
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', function() {
+                filterPills.forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                applyFilter();
+            });
+        });
+    </script>
+}
