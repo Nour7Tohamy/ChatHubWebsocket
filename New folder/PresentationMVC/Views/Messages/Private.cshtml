@@ -1,0 +1,510 @@
+@model IEnumerable<Application.DTOs.MessageDTOs.MessageDto>
+@using System.Security.Claims
+@{
+    ViewBag.Title = $"Chat with {ViewBag.TargetUserName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(to bottom, var(--bg-2), var(--bg-1));
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .chat-title-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        .chat-title-info .name {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--text-2);
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-3);
+            transition: background 0.3s;
+        }
+
+            .status-dot.online {
+                background: var(--green);
+                box-shadow: 0 0 5px var(--green);
+            }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            background: var(--bg-1);
+        }
+
+            .messages-container::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .messages-container::-webkit-scrollbar-track {
+                background: var(--bg-2);
+            }
+
+            .messages-container::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 4px;
+            }
+
+        .message {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            animation: slideIn 0.25s ease;
+        }
+
+            .message.own {
+                flex-direction: row-reverse;
+            }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-2);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            align-self: flex-end;
+        }
+
+        .message-content {
+            max-width: 62%;
+        }
+
+        .message.own .message-content {
+            text-align: right;
+        }
+
+        .message-sender {
+            font-size: 0.8rem;
+            color: var(--text-3);
+            margin-bottom: 3px;
+            padding: 0 4px;
+        }
+
+        .message-bubble {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 16px 16px 16px 4px;
+            padding: 0.65rem 1rem;
+            word-break: break-word;
+            color: var(--text-1);
+            line-height: 1.45;
+            font-size: 0.95rem;
+        }
+
+        .message.own .message-bubble {
+            background: var(--accent);
+            border-color: transparent;
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-3);
+            margin-top: 3px;
+            padding: 0 4px;
+            font-family: var(--font-mono);
+        }
+
+        .input-container {
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            background: var(--bg-2);
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            color: var(--text-1);
+            font-family: var(--font);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .message-input:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px var(--accent-dim);
+            }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 4px 14px rgba(124,106,255,0.35);
+        }
+
+            .send-btn:hover:not(:disabled) {
+                opacity: 0.9;
+            }
+
+            .send-btn:active:not(:disabled) {
+                transform: scale(0.95);
+            }
+
+            .send-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-3);
+            gap: 0.5rem;
+        }
+
+        .empty-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+    </style>
+}
+
+<input type="hidden" id="jwt-token" />
+<input type="hidden" id="target-user-id" value="@ViewBag.TargetUserId" />
+<input type="hidden" id="target-user-name" value="@ViewBag.TargetUserName" />
+<input type="hidden" id="current-user-id" />
+<input type="hidden" id="current-user-name" />
+
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="chat-title-icon" id="target-avatar">--</div>
+            <div class="chat-title-info">
+                <div class="name">@ViewBag.TargetUserName</div>
+                <div class="chat-status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="user-status">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="messages-container" id="messages-container">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var msg in Model)
+            {
+                var isOwn = msg.SenderId == User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var senderName = isOwn 
+                    ? ViewBag.DisplayName?.ToString() 
+                    : ViewBag.TargetUserName?.ToString(); 
+                    <div class="message @(isOwn ? "own" : "")" id="msg-@msg.Id">
+                    <div class="message-avatar">
+                        @((senderName ?? "U")[0].ToString().ToUpper())
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">@senderName</div>
+                        <div class="message-bubble">@msg.Content</div>
+                        <div class="message-time">@msg.SentAt.ToString("HH:mm")</div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">💬</div>
+                <div>Start a conversation with @ViewBag.TargetUserName</div>
+            </div>
+        }
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="msg-input" class="message-input"
+               placeholder="Type a message..." maxlength="1000" />
+        <button id="send-btn" class="send-btn" title="Send">➤</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // ✅ الحصول على البيانات من TokenManager (already loaded in _Layout.cshtml)
+        const userFromToken = TokenManager.getUser();
+        const jwtToken = TokenManager.getToken();
+
+        // ✅ التحقق من التوكن قبل البدء
+        if (!jwtToken || !TokenManager.isTokenValid()) {
+            console.warn('No valid token. Redirecting to login...');
+            window.location.href = '/Auth/Login';
+        }
+
+        // ─── Data ───────────────────────────────────────
+        const targetUserId   = document.getElementById('target-user-id').value;
+        const targetUserName = document.getElementById('target-user-name').value;
+        const currentUserId  = userFromToken?.userId || '';
+        const currentUserName = userFromToken?.displayName || userFromToken?.userName || 'Unknown';
+
+        // ✅ تأكد من وجود البيانات المطلوبة
+        if (!currentUserId) {
+            console.error('No current user ID. Redirecting to login...');
+            window.location.href = '/Auth/Login';
+        }
+
+        if (!targetUserId) {
+            console.error('No target user ID specified.');
+            window.location.href = '/Users/Index';
+        }
+
+        // ─── DOM ────────────────────────────────────────
+        const messagesContainer = document.getElementById('messages-container');
+        const msgInput   = document.getElementById('msg-input');
+        const sendBtn    = document.getElementById('send-btn');
+        const statusDot  = document.getElementById('status-dot');
+        const statusText = document.getElementById('user-status');
+        const avatarEl   = document.getElementById('target-avatar');
+
+        // ─── State ──────────────────────────────────────
+        let connection = null;
+        const receivedIds = new Set();
+
+        // Populate receivedIds with existing message IDs from the server-side rendering
+        @if (Model != null)
+        {
+            @foreach (var msg in Model)
+            {
+                <text>receivedIds.add('@msg.Id.ToString()');</text>
+            }
+        }
+
+        // ─── Helpers ────────────────────────────────────
+        function initials(name) {
+        return (name || 'U').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function fmtTime(iso) {
+        const d = new Date(iso);
+        return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        function setStatus(online) {
+        statusDot.className  = 'status-dot' + (online ? ' online' : '');
+        statusText.textContent = online ? 'Online' : 'Offline';
+        }
+
+        // ─── Render message ─────────────────────────────
+        function appendMessage(msg) {
+        // تجنب التكرار
+        if (receivedIds.has(msg.id)) return;
+        receivedIds.add(msg.id);
+
+        // امسح empty-state لو موجود
+        const empty = messagesContainer.querySelector('.empty-state');
+        if (empty) empty.remove();
+
+        const isOwn = msg.senderId === currentUserId;
+        const senderName = isOwn ? currentUserName : targetUserName;
+
+        const wrap = document.createElement('div');
+        wrap.className = `message ${isOwn ? 'own' : ''}`;
+        wrap.id = `msg-${msg.id}`;
+
+        wrap.innerHTML = `
+        <div class="message-avatar">${initials(senderName)}</div>
+        <div class="message-content">
+        <div class="message-sender">${senderName}</div>
+        <div class="message-bubble">${escHtml(msg.content)}</div>
+        <div class="message-time">${fmtTime(msg.sentAt)}</div>
+        </div>`;
+
+        messagesContainer.appendChild(wrap);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function escHtml(s) {
+        return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ─── Send ────────────────────────────────────────
+        function sendMessage() {
+        const content = msgInput.value.trim();
+        if (!content || !connection) return;
+        if (connection.state !== signalR.HubConnectionState.Connected) return;
+
+        sendBtn.disabled = true;
+        msgInput.disabled = true;
+
+        connection.invoke('SendPrivate', targetUserId, content)
+        .then(() => { msgInput.value = ''; })
+        .catch(err => console.error('[Private] Send error:', err))
+        .finally(() => {
+        sendBtn.disabled = false;
+        msgInput.disabled = false;
+        msgInput.focus();
+        });
+        }
+
+        msgInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        sendBtn.addEventListener('click', sendMessage);
+
+        // ─── SignalR ─────────────────────────────────────
+        function initSignalR() {
+            // استخدم TokenManager بدلاً من الجلسة
+            const jwtToken = TokenManager.getToken();
+
+            if (!jwtToken || !TokenManager.isTokenValid()) {
+                window.location.href = '/Auth/Login';
+                return;
+            }
+
+            // Set avatar initials
+            avatarEl.textContent = initials(targetUserName);
+
+            connection = new signalR.HubConnectionBuilder()
+            .withUrl('/chathub', {
+              accessTokenFactory: () => TokenManager.getToken() || '',
+              withCredentials: true
+            })
+            .withAutomaticReconnect([0, 500, 1000, 3000, 5000])
+            .build();
+
+            // ✅ الحدث الرئيسي — استقبال الرسالة الخاصة
+            connection.on('ReceivePrivate', (msg) => {
+                console.log('[Private] Received:', msg);
+                appendMessage(msg);
+            });
+
+            // تتبع حالة المستخدم الآخر
+            connection.on('UserStatusChanged', (userId, isOnline) => {
+                if (userId === targetUserId) setStatus(isOnline);
+            });
+
+            connection.onreconnecting(() => {
+                statusText.textContent = 'Reconnecting...';
+                statusDot.className = 'status-dot';
+            });
+
+            connection.onreconnected(() => {
+                statusText.textContent = 'Online';
+                statusDot.className = 'status-dot online';
+            });
+
+            connection.onclose(() => {
+                statusText.textContent = 'Disconnected';
+                statusDot.className = 'status-dot';
+            });
+
+            connection.start()
+            .then(() => {
+                console.log('[Private] SignalR connected');
+                setStatus(true);
+                msgInput.focus();
+            })
+            .catch(err => {
+                console.error('[Private] Connection failed:', err);
+                statusText.textContent = 'Connection failed';
+                if (err.toString().includes('401'))
+                    window.location.href = '/Auth/Login';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('messages-container');
+            if (container) container.scrollTop = container.scrollHeight;
+            initSignalR();
+        });
+    </script>
+}

@@ -1,0 +1,135 @@
+﻿@model IEnumerable<Domain.Entities.Main.AppUser>
+@{
+    ViewBag.Title      = "Users";
+    ViewBag.ActivePage = "Users";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+
+    var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>>
+                    ?? new Dictionary<string, IList<string>>();
+    var allRoles  = ViewBag.AllRoles  as List<string> ?? new List<string>();
+    int page       = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    string? search = ViewBag.Search as string;
+
+    string BadgeClass(string role) => role switch
+    {
+        "Admin"     => "badge-admin",
+        "Moderator" => "badge-mod",
+        _           => "badge-user"
+    };
+}
+
+<!-- Search -->
+<form method="get" action="/Admin/Users" class="search-bar">
+    <input class="input" style="flex:1;max-width:340px"
+           name="search" value="@search" placeholder="Search by name or email…" />
+    <button type="submit" class="btn btn-primary">Search</button>
+    @if (!string.IsNullOrEmpty(search))
+    {
+        <a href="/Admin/Users" class="btn btn-ghost">Clear</a>
+    }
+</form>
+
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">All Users</span>
+        <span style="font-size:0.78rem;color:var(--text-3)">Page @@page of @totalPages</span>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                var roles    = userRoles.TryGetValue(u.Id, out var r) ? r : new List<string>();
+                var topRole  = roles.Contains("Admin") ? "Admin"
+                             : roles.Contains("Moderator") ? "Moderator"
+                             : "User";
+                var initials = string.Join("",
+                    (u.DisplayName ?? u.UserName ?? "?")
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(w => char.ToUpper(w[0])).Take(2));
+
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5b4ed4);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;font-family:var(--font-display);flex-shrink:0">@initials</div>
+                            <span>@(u.DisplayName ?? u.UserName)</span>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-2)">@u.Email</td>
+                    <td style="color:var(--text-3);font-family:var(--font-mono);font-size:0.78rem">@u.CreatedAt.ToString("MMM d, yyyy")</td>
+                    <td>
+                        @if (u.IsOnline)
+                        {
+                            <span class="badge badge-online">● Online</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-offline">Offline</span>
+                        }
+                    </td>
+                    <td><span class="badge @BadgeClass(topRole)">@topRole</span></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <!-- Change Role -->
+                            <form method="post" action="/Admin/Users/ChangeRole" style="display:flex;align-items:center;gap:5px">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@u.Id" />
+                                <select name="newRole" class="select-sm">
+                                    @foreach (var role in allRoles)
+                                    {
+                                        if (role == topRole)
+                                        {
+                                            <option value="@role" selected>@role</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@role">@role</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-ghost btn-sm">Save</button>
+                            </form>
+
+                            <!-- Delete -->
+                            <form method="post" action="/Admin/Users/Delete"
+                                  onsubmit="return confirm('Delete @(u.DisplayName ?? u.UserName)? This cannot be undone.')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@u.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <a href="?page=@(page - 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page <= 1 ? "disabled" : "")">‹</a>
+
+            @for (int i = Math.Max(1, page - 2); i <= Math.Min(totalPages, page + 2); i++)
+            {
+                <a href="?page=@i@(search != null ? "&search=" + search : "")"
+                   class="page-btn @(i == page ? "current" : "")">@i</a>
+            }
+
+            <a href="?page=@(page + 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page >= totalPages ? "disabled" : "")">›</a>
+        </div>
+    }
+</div>

@@ -1,0 +1,76 @@
+﻿@model IEnumerable<Domain.Entities.Main.Room>
+@{
+    ViewBag.Title      = "Rooms";
+    ViewBag.ActivePage = "Rooms";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+
+    int page       = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    string? search = ViewBag.Search as string;
+}
+
+<form method="get" action="/Admin/Rooms" class="search-bar">
+    <input class="input" style="flex:1;max-width:340px"
+           name="search" value="@search" placeholder="Search rooms…" />
+    <button type="submit" class="btn btn-primary">Search</button>
+    @if (!string.IsNullOrEmpty(search))
+    {
+        <a href="/Admin/Rooms" class="btn btn-ghost">Clear</a>
+    }
+</form>
+
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">All Rooms</span>
+        <span style="font-size:0.78rem;color:var(--text-3)">Page @@page of @totalPages</span>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Room</th>
+                <th>Members</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var room in Model)
+            {
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:9px">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--bg-4);display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0">#</div>
+                            <span>@room.Name</span>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-2)">@room.RoomMembers.Count</td>
+                    <td style="color:var(--text-3);font-family:var(--font-mono);font-size:0.78rem">@room.CreatedAt.ToString("MMM d, yyyy")</td>
+                    <td>
+                        <form method="post" action="/Admin/Rooms/Delete"
+                              onsubmit="return confirm('Delete room \"@@room.Name\"? All messages inside will be lost.')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="roomId" value="@room.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <a href="?page=@(page - 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page <= 1 ? "disabled" : "")">‹</a>
+            @for (int i = Math.Max(1, page - 2); i <= Math.Min(totalPages, page + 2); i++)
+            {
+                <a href="?page=@i@(search != null ? "&search=" + search : "")"
+                   class="page-btn @(i == page ? "current" : "")">@i</a>
+            }
+            <a href="?page=@(page + 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page >= totalPages ? "disabled" : "")">›</a>
+        </div>
+    }
+</div>

@@ -1,0 +1,157 @@
+﻿@model List<Notification>
+
+@{
+    ViewBag.Title = "Notifications";
+}
+
+<style>
+    .notifications-wrapper {
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #8f8f9f;
+        margin-top: 6px;
+    }
+
+    .notifications-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .notification-card {
+        background: #141419;
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 18px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: .25s;
+    }
+
+        .notification-card:hover {
+            transform: translateY(-2px);
+            border-color: #7c6aff;
+            box-shadow: 0 10px 30px rgba(124,106,255,.15);
+        }
+
+    .notification-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .notification-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: rgba(124,106,255,.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .notification-content h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .notification-time {
+        color: #8f8f9f;
+        font-size: 13px;
+        margin-top: 6px;
+    }
+
+    .notification-link {
+        text-decoration: none;
+        color: white;
+        background: #7c6aff;
+        padding: 10px 16px;
+        border-radius: 10px;
+        transition: .2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+        .notification-link:hover {
+            opacity: .85;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .empty-icon {
+        font-size: 60px;
+        margin-bottom: 15px;
+    }
+
+    .empty-title {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .empty-text {
+        color: #8f8f9f;
+    }
+</style>
+
+<div class="notifications-wrapper">
+
+    <div class="page-header">
+        <h1 class="page-title">🔔 Notifications</h1>
+        <div class="page-subtitle">Stay updated with everything happening in ChatHub.</div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">No Notifications</div>
+            <div class="empty-text">You're all caught up.</div>
+        </div>
+    }
+    else
+    {
+        <div class="notifications-grid">
+            @foreach (var item in Model)
+            {
+                <div class="notification-card">
+
+                    <div class="notification-left">
+                        <div class="notification-icon">🔔</div>
+                        <div class="notification-content">
+                            <h3>@item.Title</h3>
+                            <div class="notification-time">
+                                @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") •
+                                @item.CreatedAt.ToLocalTime().ToString("hh:mm tt")
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(item.Url))
+                    {
+                        <a href="@item.Url" class="notification-link">Open</a>
+                    }
+
+                </div>
+            }
+        </div>
+    }
+
+</div>

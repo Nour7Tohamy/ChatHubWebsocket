@@ -1,0 +1,526 @@
+@model IEnumerable<Application.DTOs.MessageDTOs.MessageDto>
+@using System.Security.Claims
+@{
+    ViewBag.Title = $"Chat with {ViewBag.TargetUserName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(to bottom, var(--bg-2), var(--bg-1));
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .chat-title-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        .chat-title-info .name {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--text-2);
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-3);
+            transition: background 0.3s;
+        }
+
+        .status-dot.online {
+            background: var(--green);
+            box-shadow: 0 0 5px var(--green);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            background: var(--bg-1);
+        }
+
+        .messages-container::-webkit-scrollbar { width: 6px; }
+        .messages-container::-webkit-scrollbar-track { background: var(--bg-2); }
+        .messages-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .message {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            animation: slideIn 0.25s ease;
+        }
+
+        .message.own { flex-direction: row-reverse; }
+
+        @@keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-2);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            align-self: flex-end;
+        }
+
+        .message-content { max-width: 62%; }
+        .message.own .message-content { text-align: right; }
+
+        .message-sender {
+            font-size: 0.8rem;
+            color: var(--text-3);
+            margin-bottom: 3px;
+            padding: 0 4px;
+        }
+
+        .message-bubble {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 16px 16px 16px 4px;
+            padding: 0.65rem 1rem;
+            word-break: break-word;
+            color: var(--text-1);
+            line-height: 1.45;
+            font-size: 0.95rem;
+        }
+
+        .message.own .message-bubble {
+            background: var(--accent);
+            border-color: transparent;
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-3);
+            margin-top: 3px;
+            padding: 0 4px;
+            font-family: var(--font-mono);
+        }
+
+        .input-container {
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            background: var(--bg-2);
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            color: var(--text-1);
+            font-family: var(--font);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 4px 14px rgba(124,106,255,0.35);
+        }
+
+        .send-btn:hover:not(:disabled) { opacity: 0.9; }
+        .send-btn:active:not(:disabled) { transform: scale(0.95); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #recordBtn { font-size: 1rem; }
+
+        #recordingBadge {
+            padding: 4px 10px;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 100px;
+            color: #ef4444;
+            font-size: 0.78rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-3);
+            gap: 0.5rem;
+        }
+
+        @@media (max-width: 768px) {
+            .chat-container {
+                height: calc(100dvh - 130px);
+                margin: 0;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                max-width: 100%;
+            }
+            .chat-header { padding: 0.75rem 1rem; }
+            .chat-title-icon { width: 34px; height: 34px; font-size: 0.8rem; }
+            .chat-title-info .name { font-size: 0.95rem; }
+            .messages-container { padding: 0.75rem; }
+            .message-content { max-width: 80%; }
+            .input-container { padding: 0.6rem 0.75rem; gap: 0.5rem; }
+            .message-input { padding: 0.65rem 0.9rem; font-size: 1rem; border-radius: 20px; }
+            .send-btn { width: 38px; height: 38px; font-size: 1rem; }
+            #recordBtn { width: 38px; height: 38px; font-size: 0.95rem; }
+            #recordingBadge { font-size: 0.7rem; padding: 3px 7px; }
+        }
+
+        @@media (max-width: 480px) {
+            .chat-container { height: calc(100dvh - 120px); }
+            .message-avatar { width: 26px; height: 26px; min-width: 26px; font-size: 0.72rem; }
+            .message-content { max-width: 85%; }
+            .message-bubble { padding: 0.55rem 0.8rem; font-size: 0.9rem; }
+        }
+
+        @@media (min-width: 1280px) {
+            .chat-container { max-width: 1100px; }
+        }
+    </style>
+}
+
+<input type="hidden" id="target-user-id" value="@ViewBag.TargetUserId" />
+<input type="hidden" id="target-user-name" value="@ViewBag.TargetUserName" />
+
+<div class="chat-container">
+
+    <!-- HEADER -->
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="chat-title-icon" id="target-avatar">
+                @((ViewBag.TargetUserName as string ?? "?").FirstOrDefault().ToString().ToUpper())
+            </div>
+            <div class="chat-title-info">
+                <div class="name">@ViewBag.TargetUserName</div>
+                <div class="chat-status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="user-status">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="messages-container" id="messages-container">
+        @if (Model != null && Model.Any())
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            @foreach (var msg in Model)
+            {
+                var isOwn = msg.SenderId == currentUserId;
+                <div class="message @(isOwn ? "own" : "")" id="msg-@msg.Id">
+                    <div class="message-avatar">
+                        @((msg.SenderName ?? "U").FirstOrDefault().ToString().ToUpper())
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">@msg.SenderName</div>
+                        <div class="message-bubble">
+                            @if (msg.Type == Domain.Enums.MessageType.Voice && !string.IsNullOrEmpty(msg.AudioUrl))
+                            {
+                                <audio controls src="@msg.AudioUrl" preload="none" class="voice-player d-block"></audio>
+                            }
+                            else
+                            {
+                                @msg.Content
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <span style="font-size:2rem;opacity:.3">💬</span>
+                <span>Start chatting...</span>
+            </div>
+        }
+    </div>
+
+    <!-- TYPING -->
+    <p id="typingIndicator" class="text-muted small d-none" style="padding:0 1rem;"></p>
+
+    <!-- INPUT -->
+    <div class="input-container">
+        <input type="text" id="messageInput" class="message-input" placeholder="Type message..." />
+        <button id="send-btn" class="send-btn">➤</button>
+        <button type="button" id="recordBtn" class="send-btn">🎤</button>
+        <span id="recordingBadge" class="d-none">🔴 Recording...</span>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <script>
+        // ── Auth guard ──────────────────────────────────────────
+        if (!TokenManager.isTokenValid()) window.location.href = '/Auth/Login';
+
+        const userFromToken      = TokenManager.getUser();
+        const currentUserId      = userFromToken?.userId || '';
+        const currentDisplayName = userFromToken?.displayName || 'Unknown';
+        const targetUserId       = document.getElementById("target-user-id").value;
+
+        if (!currentUserId) window.location.href = '/Auth/Login';
+
+        // ── Status UI ───────────────────────────────────────────
+        function setStatus(isOnline) {
+            const dot   = document.getElementById("status-dot");
+            const label = document.getElementById("user-status");
+            if (!dot || !label) return;
+            dot.classList.toggle("online", isOnline);
+            label.innerText = isOnline ? "Online" : "Offline";
+        }
+
+        // ── Helpers ─────────────────────────────────────────────
+        function escHtml(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+        const receivedIds = new Set();
+
+        function appendMessage(msg) {
+            const container = document.getElementById("messages-container");
+            if (msg.id && receivedIds.has(msg.id)) return;
+            if (msg.id) receivedIds.add(msg.id);
+            const empty = container.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const isMine = msg.senderId === currentUserId;
+            const div = document.createElement("div");
+            div.className = isMine ? "message own" : "message";
+            div.id = `msg-${msg.id}`;
+
+            let bubbleContent = '';
+            if (msg.type === 1 && msg.audioUrl) {
+                bubbleContent = `<audio controls src="${escHtml(msg.audioUrl)}" preload="none" class="voice-player d-block"></audio>`;
+            } else {
+                bubbleContent = escHtml(msg.content);
+            }
+
+            const initial = (msg.senderName || 'U').charAt(0).toUpperCase();
+            div.innerHTML = `
+                <div class="message-avatar">${initial}</div>
+                <div class="message-content">
+                    <div class="message-sender">${escHtml(msg.senderName)}</div>
+                    <div class="message-bubble">${bubbleContent}</div>
+                </div>`;
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ── SignalR ─────────────────────────────────────────────
+        let connection;
+
+        function startConnection() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chathub", {
+                    accessTokenFactory: () => TokenManager.getToken() || ''
+                })
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceivePrivate", msg => appendMessage(msg));
+
+            connection.on("UserTyping", (userId, userName, isTypingFlag, roomId, toUserId) => {
+                const relevant = (userId === targetUserId && toUserId === currentUserId);
+                if (!relevant) return;
+                const indicator = document.getElementById("typingIndicator");
+                if (!indicator) return;
+                if (isTypingFlag) {
+                    indicator.textContent = `${userName} is typing...`;
+                    indicator.classList.remove("d-none");
+                } else {
+                    indicator.textContent = "";
+                    indicator.classList.add("d-none");
+                }
+            });
+
+            connection.on("UserStatusChanged", (userId, isOnline) => {
+                if (userId !== targetUserId) return;
+                setStatus(isOnline);
+            });
+
+            connection.onreconnected(async () => {
+                try {
+                    const isOnline = await connection.invoke("GetUserStatus", targetUserId);
+                    setStatus(isOnline);
+                } catch { }
+            });
+
+            connection.start()
+                .then(async () => {
+                    try {
+                        const isOnline = await connection.invoke("GetUserStatus", targetUserId);
+                        setStatus(isOnline);
+                    } catch {
+                        setStatus(false);
+                    }
+
+                    window.ChatConfig = {
+                        connection,
+                        currentUserId,
+                        currentDisplayName,
+                        mode: "private",
+                        roomId: null,
+                        targetUserId
+                    };
+                    window.__notifHubReady = true;
+                })
+                .catch(err => console.error("SignalR connection error:", err));
+        }
+
+        // ── Send ────────────────────────────────────────────────
+        const msgInput = document.getElementById("messageInput");
+        const sendBtn  = document.getElementById("send-btn");
+
+        function playNotifSound() {
+        try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx  = new AudioCtx();
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+        [[523, 0], [659, 0.18]].forEach(([freq, delay]) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.35);
+        });
+        setTimeout(() => ctx.close(), 800);
+        } catch (_) {}
+        }
+
+        sendBtn.addEventListener("click", async () => {
+            const text = msgInput.value.trim();
+
+            if (!text || !connection)
+                return;
+
+            try {
+                await connection.invoke(
+                    "SendPrivate",
+                    targetUserId,
+                    text
+                );
+
+                msgInput.value = "";
+                playNotifSound();
+            }
+            catch (err) {
+                console.error("Send failed:", err);
+            }
+        });
+     
+        msgInput.addEventListener("keydown", e => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+
+        // ── Init ────────────────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", () => {
+            const container = document.getElementById("messages-container");
+            container.scrollTop = container.scrollHeight;
+            startConnection();
+        });
+    </script>
+
+    <script src="~/js/chat-features.js"></script>
+}

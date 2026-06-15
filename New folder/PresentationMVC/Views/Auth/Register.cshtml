@@ -1,0 +1,296 @@
+@model PresentationMVC.ViewModel.RegisterViewModel
+
+@{
+    ViewBag.Title = "Create Account";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 300px);
+            padding: 2rem;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--text-2);
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                color: var(--text-1);
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 0.75rem;
+                background: var(--bg-1);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--text-1);
+                font-family: var(--font);
+                font-size: 0.95rem;
+                transition: all 0.2s ease;
+            }
+
+                .form-group input:focus {
+                    outline: none;
+                    border-color: var(--accent);
+                    box-shadow: 0 0 0 3px var(--accent-dim);
+                }
+
+        .password-rules {
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-2);
+        }
+
+            .password-rules .rule {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.25rem 0;
+                font-family: var(--font-mono);
+            }
+
+                .password-rules .rule.valid {
+                    color: var(--green);
+                }
+
+            .password-rules .rule-icon {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                border: 1px solid currentColor;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.7rem;
+                font-weight: 700;
+            }
+
+        .rule.valid .rule-icon {
+            border-color: var(--green);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font);
+        }
+
+            .submit-btn:hover {
+                background: var(--accent-2);
+                transform: translateY(-2px);
+            }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-2);
+            font-size: 0.9rem;
+        }
+
+            .auth-link a {
+                color: var(--accent);
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.2s ease;
+            }
+
+                .auth-link a:hover {
+                    color: var(--accent-2);
+                }
+
+        .validation-error {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-errors {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--red);
+            font-size: 0.9rem;
+        }
+
+            .form-errors ul {
+                list-style: none;
+                margin: 0;
+            }
+
+            .form-errors li {
+                padding: 0.25rem 0;
+            }
+    </style>
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">💬</div>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join ChatHub and start chatting</p>
+        </div>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="form-errors">
+                @ViewBag.ErrorMessage
+            </div>
+        }
+
+        <form method="post" asp-controller="Auth" asp-action="Register" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="DisplayName">Display Name</label>
+                <input type="text" asp-for="DisplayName" placeholder="Your name" />
+                <span asp-validation-for="DisplayName" class="validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email">Email Address</label>
+                <input type="email" asp-for="Email" placeholder="you@example.com" />
+                <span asp-validation-for="Email" class="validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Password</label>
+                <input type="password" asp-for="Password" placeholder="••••••••" id="password-input" />
+                <span asp-validation-for="Password" class="validation-error"></span>
+            </div>
+
+            <div class="password-rules">
+                <div class="rule" id="rule-length">
+                    <span class="rule-icon">○</span>
+                    <span>At least 6 characters</span>
+                </div>
+                <div class="rule" id="rule-upper">
+                    <span class="rule-icon">○</span>
+                    <span>1 uppercase letter</span>
+                </div>
+                <div class="rule" id="rule-number">
+                    <span class="rule-icon">○</span>
+                    <span>1 number</span>
+                </div>
+                <div class="rule" id="rule-special">
+                    <span class="rule-icon">○</span>
+                    <span>1 special character (!@@#$%^&*)</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Create Account</button>
+
+            <div class="auth-link">
+                Already have an account? <a asp-controller="Auth" asp-action="Login">Sign in</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const passwordInput = document.getElementById('password-input');
+        const rules = {
+            length: document.getElementById('rule-length'),
+            upper: document.getElementById('rule-upper'),
+            number: document.getElementById('rule-number'),
+            special: document.getElementById('rule-special')
+        };
+
+        passwordInput.addEventListener('input', () => {
+            const pwd = passwordInput.value;
+
+            const hasLength = pwd.length >= 6;
+            const hasUpper = /[A-Z]/.test(pwd);
+            const hasNumber = /[0-9]/.test(pwd);
+            const hasSpecial = /[!@@#$%^&*]/.test(pwd);
+
+            rules.length.classList.toggle('valid', hasLength);
+            rules.upper.classList.toggle('valid', hasUpper);
+            rules.number.classList.toggle('valid', hasNumber);
+            rules.special.classList.toggle('valid', hasSpecial);
+        });
+
+        // استخدم TokenManager عند التسجيل الناجح
+        document.getElementById('register-form')?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const res = await fetch("/Auth/Register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    DisplayName: document.getElementById('displayName').value,
+                    Email: document.getElementById('email').value,
+                    Password: document.getElementById('password-input').value,
+                    __RequestVerificationToken:
+                        document.querySelector('input[name="__RequestVerificationToken"]').value
+                })
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                alert(text);
+                return;
+            }
+
+            // التسجيل الناجح
+            window.location.href = "/Auth/Login";
+        });
+    </script>
+}

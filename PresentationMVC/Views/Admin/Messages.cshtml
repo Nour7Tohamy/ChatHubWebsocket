@@ -1,0 +1,79 @@
+﻿@model IEnumerable<Domain.Entities.Main.Message>
+@{
+    ViewBag.Title      = "Messages";
+    ViewBag.ActivePage = "Messages";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+
+    int page       = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    string? search = ViewBag.Search as string;
+}
+
+<form method="get" action="/Admin/Messages" class="search-bar">
+    <input class="input" style="flex:1;max-width:340px"
+           name="search" value="@search" placeholder="Search by content or sender…" />
+    <button type="submit" class="btn btn-primary">Search</button>
+    @if (!string.IsNullOrEmpty(search))
+    {
+        <a href="/Admin/Messages" class="btn btn-ghost">Clear</a>
+    }
+</form>
+
+<div class="panel">
+    <div class="panel-header">
+        <span class="panel-title">All Messages</span>
+        <span style="font-size:0.78rem;color:var(--text-3)">Page @@page of @totalPages</span>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Sender</th>
+                <th>Room</th>
+                <th>Content</th>
+                <th>Sent</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var msg in Model)
+            {
+                var preview = msg.Content?.Length > 80
+                    ? msg.Content[..80] + "…"
+                    : msg.Content ?? "(empty)";
+
+                <tr>
+                    <td style="white-space:nowrap">@(msg.Sender?.DisplayName ?? "—")</td>
+                    <td style="color:var(--text-2)"># @(msg.Room?.Name ?? "—")</td>
+                    <td style="color:var(--text-2);max-width:300px">@preview</td>
+                    <td style="color:var(--text-3);font-family:var(--font-mono);font-size:0.78rem;white-space:nowrap">
+                        @msg.SentAt.ToString("MMM d, HH:mm")
+                    </td>
+                    <td>
+                        <form method="post" action="/Admin/Messages/Delete"
+                              onsubmit="return confirm('Delete this message?')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="messageId" value="@msg.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <a href="?page=@(page - 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page <= 1 ? "disabled" : "")">‹</a>
+            @for (int i = Math.Max(1, page - 2); i <= Math.Min(totalPages, page + 2); i++)
+            {
+                <a href="?page=@i@(search != null ? "&search=" + search : "")"
+                   class="page-btn @(i == page ? "current" : "")">@i</a>
+            }
+            <a href="?page=@(page + 1)@(search != null ? "&search=" + search : "")"
+               class="page-btn @(page >= totalPages ? "disabled" : "")">›</a>
+        </div>
+    }
+</div>

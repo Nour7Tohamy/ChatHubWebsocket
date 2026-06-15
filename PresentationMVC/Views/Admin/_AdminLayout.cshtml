@@ -1,0 +1,748 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title – Admin · ChatHub</title>
+    <link rel="icon" type="image/png" href="~/Images/logo.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+            *, *::before, *::after {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --bg-base: #09090b;
+                --bg-1: #0f0f12;
+                --bg-2: #18181d;
+                --bg-3: #222228;
+                --bg-4: #2c2c35;
+                --border: rgba(255,255,255,0.07);
+                --border-2: rgba(255,255,255,0.12);
+                --accent: #7c6aff;
+                --accent-2: #a594ff;
+                --accent-dim: rgba(124,106,255,0.12);
+                --red: #ef4444;
+                --red-dim: rgba(239,68,68,0.1);
+                --green: #22c55e;
+                --yellow: #f59e0b;
+                --text-1: #f4f3f8;
+                --text-2: #9896a8;
+                --text-3: #5a5868;
+                --radius: 10px;
+                --font: 'DM Sans', sans-serif;
+                --font-display: 'Syne', sans-serif;
+                --font-mono: 'JetBrains Mono', monospace;
+                --sidebar: 220px;
+            }
+
+            html, body {
+                font-family: var(--font);
+                background: var(--bg-base);
+                color: var(--text-1);
+                min-height: 100vh;
+            }
+
+            /* ── layout shell ── */
+            .admin-shell {
+                display: flex;
+                min-height: 100vh;
+            }
+
+            /* ════ SIDEBAR ════ */
+            .admin-sidebar {
+                width: var(--sidebar);
+                background: var(--bg-1);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 50;
+            }
+
+            .sidebar-brand {
+                padding: 1.25rem 1.25rem 1rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+                .sidebar-brand a {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    text-decoration: none;
+                }
+
+            .brand-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                background: linear-gradient(135deg, var(--accent), #5b4ed4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                box-shadow: 0 0 14px rgba(124,106,255,0.3);
+            }
+
+            .brand-name {
+                font-family: var(--font-display);
+                font-size: 0.95rem;
+                font-weight: 700;
+                background: linear-gradient(135deg, var(--accent-2), var(--accent));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .admin-badge {
+                margin-left: auto;
+                font-size: 0.6rem;
+                font-weight: 700;
+                letter-spacing: 0.05em;
+                color: var(--accent-2);
+                background: var(--accent-dim);
+                border: 1px solid rgba(124,106,255,0.25);
+                border-radius: 4px;
+                padding: 2px 5px;
+                text-transform: uppercase;
+            }
+
+            /* ── nav ── */
+            .sidebar-nav {
+                flex: 1;
+                padding: 0.75rem 0.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .nav-section-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--text-3);
+                padding: 0.6rem 0.75rem 0.3rem;
+            }
+
+            .sidebar-link {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 12px;
+                border-radius: 8px;
+                color: var(--text-2);
+                text-decoration: none;
+                font-size: 0.855rem;
+                font-weight: 500;
+                transition: background 0.15s, color 0.15s;
+                position: relative;
+            }
+
+                .sidebar-link:hover {
+                    background: rgba(255,255,255,0.05);
+                    color: var(--text-1);
+                }
+
+                .sidebar-link.active {
+                    background: var(--accent-dim);
+                    color: var(--accent-2);
+                }
+
+                    .sidebar-link.active::before {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        top: 20%;
+                        bottom: 20%;
+                        width: 3px;
+                        border-radius: 0 3px 3px 0;
+                        background: var(--accent);
+                    }
+
+            .nav-icon {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+                opacity: 0.7;
+            }
+
+            .sidebar-link.active .nav-icon {
+                opacity: 1;
+            }
+
+            /* ── sidebar footer ── */
+            .sidebar-footer {
+                padding: 0.75rem;
+                border-top: 1px solid var(--border);
+            }
+
+            .sidebar-user {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                background: var(--bg-2);
+            }
+
+            .sidebar-avatar {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--accent), #5b4ed4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.65rem;
+                font-weight: 700;
+                color: #fff;
+                font-family: var(--font-display);
+                flex-shrink: 0;
+            }
+
+            .sidebar-user-info {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .sidebar-username {
+                font-size: 0.8rem;
+                font-weight: 500;
+                color: var(--text-1);
+                truncate: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+
+            .sidebar-role {
+                font-size: 0.68rem;
+                color: var(--accent-2);
+            }
+
+            .btn-logout {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                background: transparent;
+                border: 1px solid var(--border);
+                color: var(--text-3);
+                cursor: pointer;
+                transition: all 0.15s;
+                flex-shrink: 0;
+            }
+
+                .btn-logout:hover {
+                    border-color: rgba(239,68,68,0.4);
+                    color: var(--red);
+                    background: var(--red-dim);
+                }
+
+            /* ════ MAIN CONTENT ════ */
+            .admin-main {
+                margin-left: var(--sidebar);
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+
+            /* ── topbar ── */
+            .admin-topbar {
+                height: 56px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1.75rem;
+                background: rgba(9,9,11,0.7);
+                backdrop-filter: blur(16px);
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 40;
+            }
+
+            .topbar-title {
+                font-family: var(--font-display);
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text-1);
+            }
+
+            .topbar-breadcrumb {
+                font-size: 0.78rem;
+                color: var(--text-3);
+            }
+
+                .topbar-breadcrumb a {
+                    color: var(--text-3);
+                    text-decoration: none;
+                }
+
+                    .topbar-breadcrumb a:hover {
+                        color: var(--text-2);
+                    }
+
+                .topbar-breadcrumb span {
+                    margin: 0 5px;
+                }
+
+            /* ── page body ── */
+            .admin-body {
+                padding: 1.75rem;
+                flex: 1;
+            }
+
+            /* ════ CARDS / STATS ════ */
+            .stat-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+
+            .stat-card {
+                background: var(--bg-2);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.25rem 1.25rem 1rem;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .stat-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 2px;
+                    background: linear-gradient(90deg, var(--accent), transparent);
+                }
+
+            .stat-label {
+                font-size: 0.72rem;
+                color: var(--text-3);
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-value {
+                font-family: var(--font-display);
+                font-size: 1.9rem;
+                font-weight: 700;
+                color: var(--text-1);
+            }
+
+            .stat-sub {
+                font-size: 0.72rem;
+                color: var(--text-3);
+                margin-top: 0.25rem;
+            }
+
+            /* ════ PANEL ════ */
+            .panel {
+                background: var(--bg-2);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                overflow: hidden;
+            }
+
+            .panel-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .panel-title {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--text-1);
+            }
+
+            .panel-body {
+                padding: 1.25rem;
+            }
+
+            /* ════ TABLE ════ */
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+                .data-table th {
+                    font-size: 0.68rem;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.07em;
+                    color: var(--text-3);
+                    padding: 0 1.25rem 0.75rem;
+                    text-align: left;
+                }
+
+                .data-table td {
+                    padding: 0.8rem 1.25rem;
+                    border-top: 1px solid var(--border);
+                    font-size: 0.845rem;
+                    color: var(--text-1);
+                    vertical-align: middle;
+                }
+
+                .data-table tr:hover td {
+                    background: rgba(255,255,255,0.02);
+                }
+
+            /* ════ BADGES ════ */
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                font-size: 0.68rem;
+                font-weight: 600;
+                padding: 3px 8px;
+                border-radius: 100px;
+            }
+
+            .badge-admin {
+                background: rgba(124,106,255,0.15);
+                color: var(--accent-2);
+                border: 1px solid rgba(124,106,255,0.25);
+            }
+
+            .badge-mod {
+                background: rgba(245,158,11,0.12);
+                color: #fbbf24;
+                border: 1px solid rgba(245,158,11,0.2);
+            }
+
+            .badge-user {
+                background: rgba(255,255,255,0.05);
+                color: var(--text-2);
+                border: 1px solid var(--border);
+            }
+
+            .badge-online {
+                background: rgba(34,197,94,0.12);
+                color: #4ade80;
+                border: 1px solid rgba(34,197,94,0.2);
+            }
+
+            .badge-offline {
+                background: rgba(255,255,255,0.04);
+                color: var(--text-3);
+                border: 1px solid var(--border);
+            }
+
+            /* ════ BUTTONS ════ */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 14px;
+                border-radius: 7px;
+                font-family: var(--font);
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                transition: all 0.15s;
+                text-decoration: none;
+            }
+
+            .btn-primary {
+                background: var(--accent);
+                color: #fff;
+                box-shadow: 0 0 12px rgba(124,106,255,0.25);
+            }
+
+                .btn-primary:hover {
+                    opacity: 0.85;
+                }
+
+            .btn-ghost {
+                background: transparent;
+                color: var(--text-2);
+                border: 1px solid var(--border);
+            }
+
+                .btn-ghost:hover {
+                    color: var(--text-1);
+                    border-color: var(--border-2);
+                    background: rgba(255,255,255,0.04);
+                }
+
+            .btn-danger {
+                background: transparent;
+                color: var(--red);
+                border: 1px solid rgba(239,68,68,0.25);
+            }
+
+                .btn-danger:hover {
+                    background: var(--red-dim);
+                    border-color: rgba(239,68,68,0.45);
+                }
+
+            .btn-sm {
+                padding: 4px 10px;
+                font-size: 0.77rem;
+            }
+
+            /* ════ FORMS ════ */
+            .search-bar {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 1.25rem;
+            }
+
+            .input {
+                background: var(--bg-3);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 7px 12px;
+                color: var(--text-1);
+                font-family: var(--font);
+                font-size: 0.845rem;
+                outline: none;
+                transition: border-color 0.15s;
+            }
+
+                .input:focus {
+                    border-color: var(--accent);
+                }
+
+            .input-sm {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
+
+            .select-sm {
+                background: var(--bg-3);
+                border: 1px solid var(--border);
+                border-radius: 7px;
+                padding: 4px 8px;
+                color: var(--text-1);
+                font-family: var(--font);
+                font-size: 0.78rem;
+                cursor: pointer;
+                outline: none;
+            }
+
+            /* ════ PAGINATION ════ */
+            .pagination {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 1rem 1.25rem;
+                border-top: 1px solid var(--border);
+            }
+
+            .page-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 7px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.82rem;
+                text-decoration: none;
+                color: var(--text-2);
+                border: 1px solid var(--border);
+                transition: all 0.15s;
+            }
+
+                .page-btn:hover {
+                    color: var(--text-1);
+                    border-color: var(--border-2);
+                    background: rgba(255,255,255,0.04);
+                }
+
+                .page-btn.current {
+                    background: var(--accent-dim);
+                    color: var(--accent-2);
+                    border-color: rgba(124,106,255,0.3);
+                }
+
+                .page-btn.disabled {
+                    opacity: 0.35;
+                    pointer-events: none;
+                }
+
+            /* ════ ALERTS ════ */
+            .alert {
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius);
+                margin-bottom: 1.25rem;
+                font-size: 0.855rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .alert-success {
+                background: rgba(34,197,94,0.08);
+                border: 1px solid rgba(34,197,94,0.2);
+                color: #4ade80;
+            }
+
+            .alert-error {
+                background: rgba(239,68,68,0.08);
+                border: 1px solid rgba(239,68,68,0.2);
+                color: #fca5a5;
+            }
+
+            /* ════ EMPTY STATE ════ */
+            .empty-state {
+                padding: 3rem;
+                text-align: center;
+                color: var(--text-3);
+            }
+
+                .empty-state p {
+                    font-size: 0.875rem;
+                    margin-top: 0.5rem;
+                }
+
+            /* ════ RESPONSIVE ════ */
+            @@media (max-width: 768px) {
+                .admin-sidebar {
+                    transform: translateX(-100%);
+                    transition: transform 0.25s;
+                }
+
+                    .admin-sidebar.open {
+                        transform: translateX(0);
+                    }
+
+                .admin-main {
+                    margin-left: 0;
+                }
+
+                .admin-body {
+                    padding: 1rem;
+                }
+
+                .stat-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <div class="admin-shell">
+
+        <!-- ════ SIDEBAR ════ -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+
+            <div class="sidebar-brand">
+                <a href="/">
+                    <div class="brand-icon">💬</div>
+                    <span class="brand-name">ChatHub</span>
+                    <span class="admin-badge">Admin</span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <span class="nav-section-label">Overview</span>
+                <a href="/Admin" class="sidebar-link @(ViewBag.ActivePage == "Dashboard" ? "active" : "")">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                    Dashboard
+                </a>
+
+                <span class="nav-section-label" style="margin-top:0.5rem">Manage</span>
+                <a href="/Admin/Users" class="sidebar-link @(ViewBag.ActivePage == "Users" ? "active" : "")">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    Users
+                </a>
+                <a href="/Admin/Rooms" class="sidebar-link @(ViewBag.ActivePage == "Rooms" ? "active" : "")">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    Rooms
+                </a>
+                <a href="/Admin/Messages" class="sidebar-link @(ViewBag.ActivePage == "Messages" ? "active" : "")">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+                    Messages
+                </a>
+
+                <span class="nav-section-label" style="margin-top:0.5rem">App</span>
+                <a href="/Rooms/Index" class="sidebar-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                    Back to App
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                @{
+                    var dn = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Admin";
+                    var ini = string.Join("", dn.Split(' ', System.StringSplitOptions.RemoveEmptyEntries).Select(w => char.ToUpper(w[0])).Take(2));
+                }
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar">@ini</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-username">@dn</div>
+                        <div class="sidebar-role">Administrator</div>
+                    </div>
+                    <form method="post" action="/Auth/Logout" style="margin:0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-logout" title="Logout">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ════ MAIN ════ -->
+        <div class="admin-main">
+
+            <div class="admin-topbar">
+                <div class="topbar-breadcrumb">
+                    <a href="/Admin">Admin</a>
+                    @if (ViewBag.ActivePage != null && ViewBag.ActivePage != "Dashboard")
+                    {
+                        <span>›</span><span>@ViewBag.ActivePage</span>
+                    }
+                </div>
+                <span class="topbar-title">@(ViewBag.Title ?? "Dashboard")</span>
+            </div>
+
+            <div class="admin-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success">✓ @TempData["SuccessMessage"]</div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-error">⚠ @TempData["ErrorMessage"]</div>
+                }
+                @RenderBody()
+            </div>
+
+        </div>
+    </div>
+
+    @RenderSection("Scripts", required: false)
+
+    <script>
+            // mobile sidebar toggle
+            document.addEventListener('DOMContentLoaded', () => {
+                const sidebar = document.getElementById('admin-sidebar');
+                document.addEventListener('click', e => {
+                    if (window.innerWidth <= 768 &&
+                        !sidebar.contains(e.target)) {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            });
+    </script>
+</body>
+</html>

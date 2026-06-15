@@ -1,0 +1,278 @@
+@model PresentationMVC.ViewModel.LoginViewModel
+@{
+    ViewBag.Title = "Sign In";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 300px);
+            padding: 2rem;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--text-2);
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                color: var(--text-1);
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 0.75rem;
+                background: var(--bg-1);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--text-1);
+                font-family: var(--font);
+                font-size: 0.95rem;
+                transition: all 0.2s ease;
+            }
+
+                .form-group input:focus {
+                    outline: none;
+                    border-color: var(--accent);
+                    box-shadow: 0 0 0 3px var(--accent-dim);
+                }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font);
+            position: relative;
+        }
+
+            .submit-btn:hover:not(:disabled) {
+                background: var(--accent-2);
+                transform: translateY(-2px);
+            }
+
+            .submit-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        .submit-btn.loading .btn-label {
+            display: none;
+        }
+
+        .submit-btn.loading .btn-spinner {
+            display: block;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-2);
+            font-size: 0.9rem;
+        }
+
+            .auth-link a {
+                color: var(--accent);
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.2s ease;
+            }
+
+                .auth-link a:hover {
+                    color: var(--accent-2);
+                }
+
+        .validation-error {
+            color: var(--red);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .form-errors {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--red);
+            font-size: 0.9rem;
+        }
+
+        /* ══ RESPONSIVE ══════════════════════════════ */
+        @@media (max-width: 480px) {
+            .auth-container {
+                padding: 1rem;
+                align-items: flex-start;
+                padding-top: 2rem;
+            }
+
+            .auth-card {
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+
+            .auth-title { font-size: 1.3rem; }
+
+            .form-group input {
+                font-size: 1rem; /* prevent iOS zoom */
+                padding: 0.7rem 0.9rem;
+            }
+
+            .submit-btn { font-size: 1rem; }
+        }
+
+    </style>
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <div class="auth-logo">💬</div>
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to your ChatHub account</p>
+        </div>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="form-errors">@ViewBag.ErrorMessage</div>
+        }
+
+        <form method="post" asp-controller="Auth" asp-action="Login" id="login-form" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" id="email" type="email"
+                       placeholder="you@example.com" autocomplete="email" />
+                <span asp-validation-for="Email" class="validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" id="password" type="password"
+                       placeholder="••••••••" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="validation-error"></span>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">
+                <span class="btn-label">Sign In</span>
+                <span class="btn-spinner"></span>
+            </button>
+
+            <div class="auth-link">
+                Don't have an account?
+                <a asp-controller="Auth" asp-action="Register">Create one</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("login-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const btn = document.getElementById("submit-btn");
+            btn.disabled = true;
+            btn.classList.add("loading");
+
+            // ازل أي error سابق
+            document.querySelector(".form-errors")?.remove();
+
+            try {
+                const res = await fetch("/Auth/Login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(new FormData(this))
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || "Login failed");
+                }
+
+                const data = await res.json();
+
+                // احتفظ بالـ token في sessionStorage للـ SignalR
+                sessionStorage.setItem("token",       data.token);
+                sessionStorage.setItem("userId",      data.userId);
+                sessionStorage.setItem("displayName", data.displayName);
+
+                // الـ Cookie اتعمل على السيرفر — redirect عادي هيشتغل صح
+                window.location.href = "/Rooms/Index";
+
+            } catch (err) {
+                btn.disabled = false;
+                btn.classList.remove("loading");
+
+                const div = document.createElement("div");
+                div.className = "form-errors";
+                div.textContent = err.message;
+                document.querySelector(".auth-card").prepend(div);
+            }
+        });
+    </script>
+}

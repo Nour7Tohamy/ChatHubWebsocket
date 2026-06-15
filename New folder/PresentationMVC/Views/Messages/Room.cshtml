@@ -1,0 +1,312 @@
+@model IEnumerable<Application.DTOs.MessageDTOs.MessageDto>
+@using System.Security.Claims
+
+@{
+    ViewBag.Title = $"Chat - {ViewBag.RoomName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(to bottom, var(--bg-2), var(--bg-1));
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .chat-title-text::before {
+            content: '#';
+            color: var(--accent);
+            margin-right: 0.25rem;
+        }
+
+        .chat-members {
+            color: var(--text-2);
+            font-size: 0.85rem;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+            .message.own {
+                flex-direction: row-reverse;
+            }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .message-content {
+            max-width: 60%;
+        }
+
+        .message-bubble {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+        }
+
+        .message.own .message-bubble {
+            background: var(--accent);
+            color: white;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-2);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .send-btn {
+            padding: 0.75rem 1.2rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="chat-title-text">@ViewBag.RoomName</div>
+        </div>
+        <div class="chat-members">
+            <span id="members-text">Loading...</span>
+        </div>
+    </div>
+
+    <div class="messages-container" id="messages-container">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var msg in Model)
+            {
+                var isMine = msg.SenderId == User.FindFirstValue(ClaimTypes.NameIdentifier);
+                <div class="message @(isMine ? "own" : "")" id="msg-@msg.Id">
+                    <div class="message-avatar">
+                        @((msg.SenderName ?? "U").FirstOrDefault().ToString().ToUpper())
+                    </div>
+                    <div class="message-content">
+                        <div style="font-size:.8rem; color:var(--text-2); margin-bottom:.25rem; @(isMine ? "text-align: right;" : "")">
+                            @msg.SenderName
+                        </div>
+                        <div class="message-bubble">
+                            @msg.Content
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">Start chatting...</div>
+        }
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="msg-input" class="message-input" placeholder="Type message..." />
+        <button id="send-btn" class="send-btn">Send</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <input type="hidden" id="room-id" value="@ViewBag.RoomId" />
+
+    <script>
+        // ✅ الحصول على البيانات من TokenManager (already loaded in _Layout.cshtml)
+        const userFromToken = TokenManager.getUser();
+        const jwtToken = TokenManager.getToken();
+
+        // ✅ التحقق من التوكن قبل البدء
+        if (!jwtToken || !TokenManager.isTokenValid()) {
+            console.warn('No valid token. Redirecting to login...');
+            window.location.href = '/Auth/Login';
+        }
+
+        const roomId = document.getElementById("room-id").value;
+        const currentUserId = userFromToken?.userId || '';
+        const currentUserName = userFromToken?.displayName || userFromToken?.userName || 'Unknown';
+
+        // ✅ تأكد من وجود البيانات المطلوبة
+        if (!currentUserId) {
+            console.error('No current user ID. Redirecting to login...');
+            window.location.href = '/Auth/Login';
+        }
+
+        let connection;
+        const receivedIds = new Set();
+
+        // Populate receivedIds with existing message IDs from the server-side rendering
+        @if (Model != null)
+        {
+            @foreach (var msg in Model)
+            {
+                <text>receivedIds.add('@msg.Id.ToString()');</text>
+            }
+        }
+
+        function appendMessage(msg) {
+            const container = document.getElementById("messages-container");
+
+            // Avoid duplicates
+            if (receivedIds.has(msg.id)) return;
+            receivedIds.add(msg.id);
+
+            const isMine = msg.senderId === currentUserId;
+
+            // Remove empty-state if exists
+            const empty = container.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const div = document.createElement("div");
+            div.className = isMine ? "message own" : "message";
+            div.id = `msg-${msg.id}`;
+
+            div.innerHTML = `
+                <div class="message-avatar">
+                    ${(msg.senderName || "U").charAt(0).toUpperCase()}
+                </div>
+                <div class="message-content">
+                    <div style="font-size:.8rem; color:var(--text-2); margin-bottom:.25rem; ${isMine ? 'text-align: right;' : ''}">
+                        ${msg.senderName}
+                    </div>
+                    <div class="message-bubble">
+                        ${escHtml(msg.content)}
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escHtml(s) {
+            return String(s)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        async function startConnection() {
+            try {
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/chathub", {
+                     accessTokenFactory: () => TokenManager.getToken() || ''
+        })
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("ReceiveMessage", function (msg) {
+                    console.log("Received:", msg);
+                    appendMessage(msg);
+                });
+
+                connection.on("UserJoinedRoom", function (userId) {
+                    console.log("User joined:", userId);
+                });
+
+                connection.on("UserStatusChanged", function (userId, status) {
+                    console.log("Status:", userId, status);
+                });
+
+                await connection.start();
+                console.log("SignalR Connected");
+
+                await connection.invoke("JoinRoom", roomId);
+                console.log("Joined Room");
+
+            } catch (err) {
+                console.error("Connection Error:", err);
+                if (err.message && err.message.includes('401')) {
+                    console.warn("Unauthorized. Redirecting to login...");
+                    window.location.href = "/Auth/Login";
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Scroll to bottom of message container initially
+            const container = document.getElementById("messages-container");
+            container.scrollTop = container.scrollHeight;
+
+            await startConnection();
+
+            const sendBtn = document.getElementById("send-btn");
+            const input = document.getElementById("msg-input");
+
+            sendBtn.addEventListener("click", async () => {
+                const text = input.value.trim();
+                if (!text || !connection) return;
+                if (connection.state !== signalR.HubConnectionState.Connected) return;
+
+                try {
+                    await connection.invoke("SendMessage", roomId, text);
+                    input.value = "";
+                } catch (err) {
+                    console.error("Send Error:", err);
+                }
+            });
+
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendBtn.click();
+                }
+            });
+        });
+    </script>
+}

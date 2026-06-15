@@ -1,0 +1,475 @@
+﻿@model Domain.Entities.Main.AppUser
+@{
+    ViewBag.Title = "Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isAdmin = ViewBag.IsAdmin == true;
+    var joinDate = Model.CreatedAt.ToString("MMMM d, yyyy");
+    var initials = string.Join("",
+        (Model.DisplayName ?? Model.UserName ?? "?")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => char.ToUpper(w[0])).Take(2));
+}
+
+@section Styles {
+    <style>
+        .profile-wrap {
+            max-width: 780px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* ── Card ── */
+        .p-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .p-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .p-card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        .p-card-body {
+            padding: 1.25rem;
+        }
+
+        /* ── Hero ── */
+        .profile-hero {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .avatar-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #5b4ed4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            overflow: hidden;
+            border: 3px solid rgba(124,106,255,0.3);
+            box-shadow: 0 0 20px rgba(124,106,255,0.2);
+        }
+
+            .avatar-lg img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        /* camera overlay */
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid var(--bg-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+            .avatar-upload-btn:hover {
+                opacity: 0.85;
+            }
+
+            .avatar-upload-btn input {
+                display: none;
+            }
+
+        .profile-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-name {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 3px;
+        }
+
+        .profile-email {
+            font-size: 0.845rem;
+            color: var(--text-2);
+            margin-bottom: 6px;
+        }
+
+        .profile-joined {
+            font-size: 0.75rem;
+            color: var(--text-3);
+            font-family: var(--font-mono);
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 100px;
+        }
+
+        .badge-admin {
+            background: rgba(124,106,255,0.15);
+            color: var(--accent-2);
+            border: 1px solid rgba(124,106,255,0.25);
+        }
+
+        .badge-online {
+            background: rgba(34,197,94,0.12);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,0.2);
+        }
+
+        .badge-offline {
+            background: rgba(255,255,255,0.04);
+            color: var(--text-3);
+            border: 1px solid var(--border);
+        }
+
+        /* ── Stat grid ── */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-box-val {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .stat-box-lbl {
+            font-size: 0.72rem;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 3px;
+        }
+
+        /* ── Form ── */
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+            .field label {
+                font-size: 0.78rem;
+                color: var(--text-2);
+                font-weight: 500;
+            }
+
+        .input {
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-1);
+            font-family: var(--font);
+            font-size: 0.845rem;
+            outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+        }
+
+            .input:focus {
+                border-color: var(--accent);
+            }
+
+            .input[readonly] {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @@media (max-width: 560px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 0.845rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(124,106,255,0.25);
+        }
+
+            .btn-primary:hover {
+                opacity: 0.85;
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+            .btn-ghost:hover {
+                color: var(--text-1);
+                border-color: var(--border-2);
+                background: rgba(255,255,255,0.04);
+            }
+
+        /* ── Admin quick links ── */
+        .admin-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .admin-link-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.9rem 1rem;
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            text-decoration: none;
+            color: var(--text-2);
+            font-size: 0.845rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+            .admin-link-card:hover {
+                color: var(--accent-2);
+                border-color: rgba(124,106,255,0.25);
+                background: var(--accent-dim);
+            }
+
+        .admin-link-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+    </style>
+}
+
+<div class="profile-wrap">
+
+    @* ── Hero Card ── *@
+    <div class="p-card">
+        <div class="p-card-body">
+            <div class="profile-hero">
+
+                @* Avatar *@
+                <div class="avatar-wrap">
+                    <div class="avatar-lg">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        {
+                            <img src="@Model.ProfilePicture" alt="@Model.DisplayName" />
+                        }
+                        else
+                        {
+                            @initials
+                        }
+                    </div>
+                    <label class="avatar-upload-btn" title="Change photo">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                        <form method="post" action="/Profile/UploadPicture" enctype="multipart/form-data" id="avatarForm">
+                            @Html.AntiForgeryToken()
+                            <input type="file" name="picture" accept="image/jpeg,image/png,image/webp"
+                                   onchange="document.getElementById('avatarForm').submit()" />
+                        </form>
+                    </label>
+                </div>
+
+                @* Info *@
+                <div class="profile-meta">
+                    <div class="profile-name">@Model.DisplayName</div>
+                    <div class="profile-email">@Model.Email</div>
+                    <div class="profile-joined">Joined @joinDate</div>
+                    <div class="profile-badges">
+                        @if (isAdmin)
+                        {
+                            <span class="badge badge-admin">⬡ Admin</span>
+                        }
+                        @if (Model.IsOnline)
+                        {
+                            <span class="badge badge-online">● Online</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-offline">Offline</span>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    @* ── Stats ── *@
+    <div class="p-card">
+        <div class="p-card-header"><span class="p-card-title">Activity</span></div>
+        <div class="p-card-body">
+            <div class="stat-row">
+                <div class="stat-box">
+                    <div class="stat-box-val">@ViewBag.RoomsCount</div>
+                    <div class="stat-box-lbl">Rooms Joined</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-val">@ViewBag.MessagesCount</div>
+                    <div class="stat-box-lbl">Messages Sent</div>
+                </div>
+                @if (isAdmin)
+                {
+                    <div class="stat-box">
+                        <div class="stat-box-val" style="color:var(--accent-2)">@ViewBag.TotalUsers</div>
+                        <div class="stat-box-lbl">Total Users</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-val" style="color:var(--green)">@ViewBag.OnlineUsers</div>
+                        <div class="stat-box-lbl">Online Now</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-val">@ViewBag.TotalRooms</div>
+                        <div class="stat-box-lbl">Total Rooms</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-val">@ViewBag.TotalMessages</div>
+                        <div class="stat-box-lbl">Total Messages</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── Edit Info ── *@
+    <div class="p-card">
+        <div class="p-card-header"><span class="p-card-title">Account Info</span></div>
+        <div class="p-card-body">
+            <form method="post" action="/Profile/UpdateName">
+                @Html.AntiForgeryToken()
+                <div class="form-row" style="margin-bottom:1rem">
+                    <div class="field">
+                        <label>Display Name</label>
+                        <input class="input" name="displayName" value="@Model.DisplayName" required />
+                    </div>
+                    <div class="field">
+                        <label>Username</label>
+                        <input class="input" value="@Model.UserName" readonly />
+                    </div>
+                </div>
+                <div class="field" style="margin-bottom:1rem">
+                    <label>Email</label>
+                    <input class="input" value="@Model.Email" readonly />
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    @* ── Admin Quick Links (Admin only) ── *@
+    @if (isAdmin)
+    {
+        <div class="p-card">
+            <div class="p-card-header"><span class="p-card-title">Admin Controls</span></div>
+            <div class="p-card-body">
+                <div class="admin-links">
+                    <a href="/Admin" class="admin-link-card">
+                        <div class="admin-link-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                        </div>
+                        Dashboard
+                    </a>
+                    <a href="/Admin/Users" class="admin-link-card">
+                        <div class="admin-link-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                        </div>
+                        Manage Users
+                    </a>
+                    <a href="/Admin/Rooms" class="admin-link-card">
+                        <div class="admin-link-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        </div>
+                        Manage Rooms
+                    </a>
+                    <a href="/Admin/Messages" class="admin-link-card">
+                        <div class="admin-link-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+                        </div>
+                        Manage Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
